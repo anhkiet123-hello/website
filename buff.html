@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Buff TikTok Giá Rẻ — Buff</title>
+<style>
+  body{font-family:Arial;background:#f7fafc;margin:0;padding:18px}
+  .wrap{max-width:900px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.06);margin-bottom:12px}
+  input,select{padding:8px;border-radius:6px;border:1px solid #ddd;width:100%;margin-top:6px}
+  button{padding:8px 12px;border-radius:6px;border:0;background:#2563eb;color:#fff;cursor:pointer}
+  .muted{color:#666;font-size:13px}
+  .row{display:flex;gap:12px}
+  .col{flex:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h2>Buff TikTok Giá Rẻ — Khu Người dùng</h2>
+      <div class="muted" id="whoami"></div>
+    </div>
+    <div>
+      <a href="nap.html">Nạp tiền</a> |
+      <a href="history.html">Lịch sử</a> |
+      <a href="index.html" id="btnLogout">Đăng xuất</a>
+    </div>
+  </header>
+
+  <div class="card">
+    <h3>Đặt buff TikTok</h3>
+    <label>Link video</label>
+    <input id="link" placeholder="https://...">
+    <div class="row">
+      <div class="col">
+        <label>Loại</label>
+        <select id="type">
+          <option value="like">Like — 4 đ</option>
+          <option value="share">Share — 50 đ</option>
+          <option value="follow">Follow — 30 đ</option>
+          <option value="comment">Comment — 120 đ</option>
+          <option value="view">View — 0.4 đ</option>
+          <option value="live">Mắt xem live — 25 đ</option>
+        </select>
+      </div>
+      <div style="width:160px">
+        <label>Số lượng</label>
+        <input id="qty" type="number" value="100" min="1">
+      </div>
+    </div>
+
+    <p class="muted">Tổng: <strong id="total">0</strong> đ</p>
+    <div style="display:flex;gap:8px">
+      <button id="btnCalc">Tính tiền</button>
+      <button id="btnOrder">Đặt đơn (trừ tiền)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRICE_MAP = { like:4, share:50, follow:30, comment:120, view:0.4, live:25 };
+function read(k){ return JSON.parse(localStorage.getItem(k)||'[]'); }
+function write(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function gen(prefix){ return prefix + Date.now().toString().slice(-6) + Math.floor(Math.random()*900+100); }
+
+/* Auth */
+const loggedId = localStorage.getItem('loggedUserId');
+if(!loggedId){ alert('Vui lòng đăng nhập'); location.href = 'index.html'; }
+let users = read('users');
+let me = users.find(u=> u.id === loggedId);
+if(!me){ localStorage.removeItem('loggedUserId'); alert('Tài khoản không tồn tại'); location.href='index.html'; }
+
+function renderWho(){ document.getElementById('whoami').textContent = `${me.username} (${me.id}) — Số dư: ${Math.round(me.balance||0)} đ`; }
+renderWho();
+
+/* Calc */
+document.getElementById('btnCalc').addEventListener('click', ()=>{
+  const t = document.getElementById('type').value;
+  const q = Number(document.getElementById('qty').value || 0);
+  if(q<=0) return alert('Số lượng phải > 0');
+  const total = PRICE_MAP[t] * q;
+  document.getElementById('total').textContent = Math.round(total);
+});
+
+/* Order */
+document.getElementById('btnOrder').addEventListener('click', ()=>{
+  const link = document.getElementById('link').value.trim();
+  const type = document.getElementById('type').value;
+  const qty = Number(document.getElementById('qty').value || 0);
+  if(!link) return alert('Nhập link');
+  if(qty<=0) return alert('Số lượng > 0');
+  const total = Math.round(PRICE_MAP[type] * qty);
+
+  // reload latest users & me before change
+  users = read('users');
+  const idx = users.findIndex(u=> u.id === me.id);
+  if(users[idx].balance < total) return alert('Số dư không đủ');
+  if(!confirm(`Xác nhận đặt đơn ${type} x${qty} — ${total} đ?`)) return;
+
+  users[idx].balance = Math.round(users[idx].balance - total);
+  me = users[idx];
+  write('users', users);
+
+  // push order to global orders list (admin reads from orders key)
+  const orders = read('orders');
+  const order = { orderId: gen('ORD'), userId: me.id, type, amount: qty, total, link, status: 'Chờ duyệt', createdAt: new Date().toISOString() };
+  orders.push(order);
+  write('orders', orders);
+
+  alert('Tạo đơn thành công — ID: ' + order.orderId);
+  renderWho();
+  document.getElementById('link').value = '';
+  document.getElementById('qty').value = 100;
+  document.getElementById('total').textContent = 0;
+});
+
+/* Logout link */
+document.getElementById('btnLogout').addEventListener('click', (e)=>{
+  e.preventDefault();
+  if(!confirm('Bạn muốn đăng xuất?')) return;
+  localStorage.removeItem('loggedUserId');
+  location.href='index.html';
+});
+</script>
+</body>
+</html>

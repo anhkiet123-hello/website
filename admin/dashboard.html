@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Dashboard — Buff TikTok Giá Rẻ</title>
+<style>
+  body{font-family:Arial;background:#f3f4f6;margin:0;padding:18px}
+  .wrap{max-width:1100px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .card{background:#fff;padding:12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.06);margin-bottom:12px}
+  .tabs{display:flex;gap:8px}
+  .tabs button{padding:8px 12px;border-radius:6px;border:0;background:#e2e8f0;cursor:pointer}
+  .tabs button.active{background:#2563eb;color:#fff}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border:1px solid #eee;text-align:center}
+  input,select{padding:6px;border-radius:6px;border:1px solid #ddd}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h2>👑 Admin — Buff TikTok Giá Rẻ</h2>
+    <div>
+      <button id="btnLogoutAdmin">Đăng xuất</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="active" data-tab="usersTab">Người dùng</button>
+      <button data-tab="ordersTab">Đơn buff</button>
+      <button data-tab="depositsTab">Nạp tiền</button>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="card" id="usersTab">
+    <h3>Danh sách người dùng</h3>
+    <input id="searchUser" placeholder="Tìm theo ID hoặc username" style="width:40%;margin-bottom:8px">
+    <table>
+      <thead><tr><th>ID</th><th>Username</th><th>Balance (đ)</th></tr></thead>
+      <tbody id="usersBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="card hidden" id="ordersTab">
+    <h3>Danh sách đơn buff</h3>
+    <input id="searchOrder" placeholder="Tìm ID đơn" style="width:40%;margin-bottom:8px">
+    <table>
+      <thead><tr><th>ID đơn</th><th>User ID</th><th>Loại</th><th>Số lượng</th><th>Tổng</th><th>Link</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+  </div>
+
+  <!-- DEPOSITS -->
+  <div class="card hidden" id="depositsTab">
+    <h3>Danh sách nạp tiền</h3>
+    <table>
+      <thead><tr><th>User ID</th><th>ID nạp</th><th>Số tiền</th><th>Trạng thái</th><th>Nhập tiền</th><th>Hành động</th></tr></thead>
+      <tbody id="depositsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+/* helpers */
+function read(k){ return JSON.parse(localStorage.getItem(k)||'[]'); }
+function write(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function gen(prefix){ return prefix + Date.now().toString().slice(-6) + Math.floor(Math.random()*900+100); }
+
+/* Auth guard */
+if(localStorage.getItem('adminLoggedIn') !== 'true') {
+  alert('Vui lòng đăng nhập admin');
+  location.href = 'login.html';
+}
+
+/* UI tab handling */
+document.querySelectorAll('.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=> {
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.card').forEach(c=> c.classList.add('hidden'));
+    // show header card + target tab card
+    document.querySelector('.card').classList.remove('hidden'); // the top tabs card
+    document.getElementById(tab).classList.remove('hidden');
+  });
+});
+
+/* Logout admin */
+document.getElementById('btnLogoutAdmin').addEventListener('click', ()=>{
+  localStorage.removeItem('adminLoggedIn');
+  location.href = 'login.html';
+});
+
+/* Render functions */
+function renderUsers(){
+  const users = read('users');
+  const q = (document.getElementById('searchUser').value||'').toLowerCase();
+  const body = document.getElementById('usersBody');
+  body.innerHTML = '';
+  users.filter(u => u.id.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)).forEach(u=>{
+    body.innerHTML += `<tr><td>${u.id}</td><td>${u.username}</td><td>${(u.balance||0).toLocaleString()}</td></tr>`;
+  });
+}
+
+function renderOrders(){
+  const orders = read('orders');
+  const q = (document.getElementById('searchOrder').value||'').toLowerCase();
+  const body = document.getElementById('ordersBody');
+  body.innerHTML = '';
+  orders.filter(o => o.orderId.toLowerCase().includes(q) || o.userId.toLowerCase().includes(q)).forEach((o,i)=>{
+    body.innerHTML += `<tr>
+      <td>${o.orderId}</td>
+      <td>${o.userId}</td>
+      <td>${o.type}</td>
+      <td>${o.amount}</td>
+      <td>${(o.total||0).toLocaleString()}</td>
+      <td><a href="${o.link}" target="_blank">Xem</a></td>
+      <td>
+        <select id="orderStatus-${i}">
+          <option ${o.status==="Chờ duyệt"?'selected':''}>Chờ duyệt</option>
+          <option ${o.status==="Thành công"?'selected':''}>Thành công</option>
+          <option ${o.status==="Thất bại"?'selected':''}>Thất bại</option>
+        </select>
+      </td>
+      <td>
+        <button onclick="updateOrder(${i})">Cập nhật</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function renderDeposits(){
+  const deps = read('deposits');
+  const body = document.getElementById('depositsBody');
+  body.innerHTML = '';
+  deps.forEach((d,i)=>{
+    body.innerHTML += `<tr>
+      <td>${d.userId}</td>
+      <td>${d.id}</td>
+      <td>${(d.amount||0).toLocaleString()}</td>
+      <td>
+        <select id="depStatus-${i}">
+          <option ${d.status==="Chờ duyệt"?'selected':''}>Chờ duyệt</option>
+          <option ${d.status==="Thành công"?'selected':''}>Thành công</option>
+          <option ${d.status==="Thất bại"?'selected':''}>Thất bại</option>
+        </select>
+      </td>
+      <td><input id="depAdd-${i}" type="number" placeholder="Số tiền cộng" value="${d.amount||0}" style="padding:6px;width:120px"></td>
+      <td><button onclick="updateDeposit(${i})">Cập nhật</button></td>
+    </tr>`;
+  });
+}
+
+/* Updates */
+function updateDeposit(i){
+  const deps = read('deposits');
+  const users = read('users');
+  const d = deps[i];
+  const newStatus = document.getElementById(`depStatus-${i}`).value;
+  const addAmount = Number(document.getElementById(`depAdd-${i}`).value || 0);
+
+  d.status = newStatus;
+  if(newStatus === 'Thành công'){
+    const user = users.find(u=> u.id === d.userId);
+    if(user){
+      user.balance = Math.round((user.balance||0) + addAmount);
+      // also reflect deposit.amount = addAmount (store what admin confirmed)
+      d.amount = addAmount;
+    }
+  }
+
+  write('users', users);
+  write('deposits', deps);
+  renderDeposits(); renderUsers();
+  alert('Đã cập nhật yêu cầu nạp.');
+}
+
+function updateOrder(i){
+  const orders = read('orders');
+  const users = read('users');
+  const o = orders[i];
+  const newStatus = document.getElementById(`orderStatus-${i}`).value;
+
+  // If admin marks Thành công and previously not Thành công, set and (optionally) do extra actions
+  if(newStatus === 'Thành công' && o.status !== 'Thành công'){
+    // mark order done
+    o.status = 'Thành công';
+    // Optionally: if you want to refund or charge now, logic can be added here.
+    // In our flow, money was already deducted when user created order.
+  } else {
+    o.status = newStatus;
+  }
+
+  write('orders', orders);
+  renderOrders();
+  alert('Đã cập nhật trạng thái đơn.');
+}
+
+/* Initial render + search handlers */
+document.getElementById('searchUser').addEventListener('input', renderUsers);
+document.getElementById('searchOrder').addEventListener('input', renderOrders);
+
+renderUsers(); renderOrders(); renderDeposits();
+</script>
+</body>
+</html>

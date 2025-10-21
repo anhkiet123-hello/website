@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buff TikTok Giá Rẻ</title>
+<style>
+  body{font-family:Arial;margin:0;background:#f8fafc}
+  header{background:#2563eb;color:#fff;padding:10px;text-align:center}
+  nav a{margin:0 10px;color:#fff;text-decoration:none;font-weight:bold}
+  .page{display:none;padding:20px}
+  .active{display:block}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{padding:8px;border:1px solid #ddd;text-align:center}
+  button{padding:6px 10px;border:0;background:#2563eb;color:#fff;border-radius:4px;cursor:pointer}
+  input,select{padding:6px;border:1px solid #ccc;border-radius:4px;margin:4px 0;width:100%}
+  .card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.05);margin-bottom:15px}
+</style>
+</head>
+<body>
+<header>
+  <h2>Buff TikTok Giá Rẻ</h2>
+  <nav>
+    <a href="#" onclick="showPage('loginUser')">Đăng nhập</a>
+    <a href="#" onclick="showPage('buffUser')">Buff</a>
+    <a href="#" onclick="showPage('napUser')">Nạp tiền</a>
+    <a href="#" onclick="showPage('lichsuUser')">Lịch sử</a>
+    <a href="#" onclick="showPage('adminLogin')">Admin</a>
+  </nav>
+</header>
+
+<!-- Người dùng -->
+<div id="loginUser" class="page active">
+  <div class="card">
+    <h3>Đăng nhập / Đăng ký</h3>
+    <input id="userName" placeholder="Tên tài khoản">
+    <button onclick="userLogin()">Đăng nhập</button>
+    <button onclick="userRegister()">Đăng ký</button>
+  </div>
+</div>
+
+<div id="buffUser" class="page">
+  <div class="card">
+    <h3>Đặt đơn Buff</h3>
+    <input id="buffType" placeholder="Loại buff (tim, follow...)">
+    <input id="buffAmount" type="number" placeholder="Số lượng">
+    <button onclick="addOrder()">Tạo đơn</button>
+  </div>
+  <div class="card">
+    <h3>Danh sách đơn</h3>
+    <table id="ordersTable"></table>
+  </div>
+</div>
+
+<div id="napUser" class="page">
+  <div class="card">
+    <h3>Nạp tiền</h3>
+    <input id="napAmount" type="number" placeholder="Số tiền muốn nạp">
+    <button onclick="createDeposit()">Tạo yêu cầu nạp</button>
+  </div>
+  <div class="card">
+    <h3>Lịch sử nạp</h3>
+    <table id="depositTable"></table>
+  </div>
+</div>
+
+<div id="lichsuUser" class="page">
+  <div class="card">
+    <h3>Lịch sử hoạt động</h3>
+    <table id="historyTable"></table>
+  </div>
+</div>
+
+<!-- Admin -->
+<div id="adminLogin" class="page">
+  <div class="card">
+    <h3>Admin đăng nhập</h3>
+    <input id="adminUser" placeholder="Tên admin">
+    <button onclick="adminLogin()">Đăng nhập</button>
+  </div>
+</div>
+
+<div id="adminDash" class="page">
+  <div class="card">
+    <h3>Danh sách người dùng</h3>
+    <table id="usersTable"></table>
+  </div>
+  <div class="card">
+    <h3>Danh sách đơn chờ duyệt</h3>
+    <table id="adminOrders"></table>
+  </div>
+  <div class="card">
+    <h3>Danh sách nạp tiền</h3>
+    <table id="adminDeposits"></table>
+  </div>
+</div>
+
+<script>
+/* --- Helpers --- */
+function read(k){return JSON.parse(localStorage.getItem(k)||'[]')}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function randId(){return 'id'+Math.random().toString(36).substr(2,8)}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');refreshAll()}
+
+/* --- User --- */
+function userLogin(){
+  const n=document.getElementById('userName').value.trim()
+  const users=read('users')
+  const u=users.find(x=>x.username===n)
+  if(!u)return alert('Không tồn tại, vui lòng đăng ký!')
+  localStorage.setItem('loggedUser',u.id)
+  alert('Đăng nhập thành công')
+  showPage('buffUser')
+}
+function userRegister(){
+  const n=document.getElementById('userName').value.trim()
+  if(!n)return alert('Nhập tên!')
+  const users=read('users')
+  if(users.find(x=>x.username===n))return alert('Đã tồn tại!')
+  const u={id:randId(),username:n,balance:0}
+  users.push(u);save('users',users)
+  localStorage.setItem('loggedUser',u.id)
+  alert('Đăng ký thành công')
+  showPage('buffUser')
+}
+function addOrder(){
+  const id=localStorage.getItem('loggedUser')
+  if(!id)return alert('Chưa đăng nhập!')
+  const type=document.getElementById('buffType').value
+  const amount=parseInt(document.getElementById('buffAmount').value)
+  if(!type||!amount)return alert('Nhập đủ!')
+  const orders=read('orders')
+  orders.push({id:randId(),userId:id,type,amount,status:'Chờ duyệt',created:new Date()})
+  save('orders',orders)
+  refreshAll();broadcast()
+}
+function createDeposit(){
+  const id=localStorage.getItem('loggedUser')
+  const amount=parseInt(document.getElementById('napAmount').value)
+  if(!amount)return alert('Nhập số tiền!')
+  const dep=read('deposits')
+  dep.push({id:randId(),userId:id,amount,status:'Chờ duyệt',created:new Date()})
+  save('deposits',dep)
+  refreshAll();broadcast()
+}
+
+/* --- Admin --- */
+function adminLogin(){
+  const n=document.getElementById('adminUser').value.trim()
+  if(n!=='admin')return alert('Sai tài khoản!')
+  localStorage.setItem('admin','1')
+  alert('Đăng nhập admin thành công')
+  showPage('adminDash');refreshAll()
+}
+function approveDeposit(id){
+  const dep=read('deposits')
+  const d=dep.find(x=>x.id===id)
+  if(!d)return
+  d.status='Thành công'
+  save('deposits',dep)
+  const users=read('users')
+  const u=users.find(x=>x.id===d.userId)
+  if(u){u.balance+=d.amount;save('users',users)}
+  broadcast();refreshAll()
+}
+function approveOrder(id){
+  const ord=read('orders')
+  const o=ord.find(x=>x.id===id)
+  if(!o)return
+  o.status='Thành công'
+  save('orders',ord)
+  broadcast();refreshAll()
+}
+
+/* --- Hiển thị --- */
+function refreshAll(){
+  const uid=localStorage.getItem('loggedUser')
+  const ulist=read('users')
+  const ord=read('orders')
+  const dep=read('deposits')
+  /* user orders */
+  const userOrders=ord.filter(o=>o.userId===uid)
+  document.getElementById('ordersTable').innerHTML='<tr><th>Loại</th><th>SL</th><th>Trạng thái</th></tr>'+userOrders.map(o=>`<tr><td>${o.type}</td><td>${o.amount}</td><td>${o.status}</td></tr>`).join('')
+  /* deposits */
+  const userDeps=dep.filter(d=>d.userId===uid)
+  document.getElementById('depositTable').innerHTML='<tr><th>Số tiền</th><th>Trạng thái</th></tr>'+userDeps.map(d=>`<tr><td>${d.amount}</td><td>${d.status}</td></tr>`).join('')
+  /* history */
+  document.getElementById('historyTable').innerHTML='<tr><th>Loại</th><th>Chi tiết</th><th>Trạng thái</th></tr>'+
+    userOrders.map(o=>`<tr><td>Buff</td><td>${o.type} - ${o.amount}</td><td>${o.status}</td></tr>`).join('')+
+    userDeps.map(d=>`<tr><td>Nạp</td><td>${d.amount}</td><td>${d.status}</td></tr>`).join('')
+  /* admin view */
+  if(localStorage.getItem('admin')){
+    document.getElementById('usersTable').innerHTML='<tr><th>Tên</th><th>Số dư</th></tr>'+ulist.map(x=>`<tr><td>${x.username}</td><td>${x.balance}</td></tr>`).join('')
+    document.getElementById('adminOrders').innerHTML='<tr><th>Tài khoản</th><th>Loại</th><th>SL</th><th>Trạng thái</th><th></th></tr>'+
+      ord.map(o=>`<tr><td>${ulist.find(u=>u.id===o.userId)?.username||'?'}</td><td>${o.type}</td><td>${o.amount}</td><td>${o.status}</td>
+      <td>${o.status==='Chờ duyệt'?`<button onclick="approveOrder('${o.id}')">Duyệt</button>`:''}</td></tr>`).join('')
+    document.getElementById('adminDeposits').innerHTML='<tr><th>Tài khoản</th><th>Số tiền</th><th>Trạng thái</th><th></th></tr>'+
+      dep.map(d=>`<tr><td>${ulist.find(u=>u.id===d.userId)?.username||'?'}</td><td>${d.amount}</td><td>${d.status}</td>
+      <td>${d.status==='Chờ duyệt'?`<button onclick="approveDeposit('${d.id}')">Duyệt</button>`:''}</td></tr>`).join('')
+  }
+}
+
+/* --- Đồng bộ real-time giữa tab --- */
+function broadcast(){localStorage.setItem('sync',Date.now())}
+window.addEventListener('storage',e=>{if(e.key==='sync')refreshAll()})
+
+refreshAll()
+</script>
+</body>
+</html>

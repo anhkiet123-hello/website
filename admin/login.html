@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Buff TikTok Giá Rẻ</title>
+<style>
+  body{font-family:Arial;background:#fff8f0;margin:0;padding:24px}
+  .card{max-width:420px;margin:80px auto;padding:16px;background:#fff;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+  input{width:100%;padding:8px;margin:8px 0;border-radius:6px;border:1px solid #ddd}
+  button{padding:8px 12px;border-radius:6px;border:0;background:#111;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Admin — Buff TikTok Giá Rẻ</h2>
+  <input id="adminUser" placeholder="User">
+  <input id="adminPass" placeholder="Password" type="password">
+  <button id="btnAdminLogin">Đăng nhập Admin</button>
+  <p style="margin-top:12px"><a href="../index.html">Về khu người dùng</a></p>
+</div>
+
+<script>
+document.getElementById('btnAdminLogin').addEventListener('click', ()=>{
+  const u = document.getElementById('adminUser').value.trim();
+  const p = document.getElementById('adminPass').value.trim();
+  if(u === 'admin' && p === '0797130044'){
+    localStorage.setItem('adminLoggedIn','true');
+    location.href = 'dashboard.html';
+  } else alert('Sai thông tin admin');
+});
+</script>
+</body>
+</html>

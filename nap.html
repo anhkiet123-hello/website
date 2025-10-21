@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Buff TikTok Giá Rẻ — Nạp tiền</title>
+<style>
+  body{font-family:Arial;background:#f7fafc;margin:0;padding:18px}
+  .wrap{max-width:720px;margin:0 auto}
+  .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.06);margin-bottom:12px}
+  input{padding:8px;border-radius:6px;border:1px solid #ddd;width:100%;margin-top:6px}
+  button{padding:8px 12px;border-radius:6px;border:0;background:#2563eb;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>Nạp tiền — Buff TikTok Giá Rẻ</h2>
+    <div style="background:#f0f9ff;padding:10px;border-radius:8px;margin-bottom:8px">
+      <strong>Ngân hàng:</strong> MBBANK<br>
+      <strong>Tên TK:</strong> NGUYEN ANH KIET<br>
+      <strong>Số TK:</strong> 0797130044<br>
+      <strong>Ghi chú (Nội dung CK):</strong> <span id="note" style="font-weight:600"></span>
+    </div>
+
+    <label>Số tiền (VND)</label>
+    <input id="amount" type="number" value="10000">
+    <div style="margin-top:8px">
+      <button id="btnCreate">Tạo yêu cầu nạp</button>
+      <a href="buff.html" style="margin-left:12px">Quay lại</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function read(k){ return JSON.parse(localStorage.getItem(k)||'[]'); }
+function write(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function gen(prefix){ return prefix + Date.now().toString().slice(-6) + Math.floor(Math.random()*900+100); }
+
+const loggedId = localStorage.getItem('loggedUserId');
+if(!loggedId){ alert('Vui lòng đăng nhập'); location.href='index.html'; }
+const users = read('users');
+const me = users.find(u=> u.id === loggedId);
+if(!me){ localStorage.removeItem('loggedUserId'); alert('Tài khoản không tồn tại'); location.href='index.html'; }
+document.getElementById('note').textContent = me.id;
+
+document.getElementById('btnCreate').addEventListener('click', ()=>{
+  const amt = Math.round(Number(document.getElementById('amount').value || 0));
+  if(amt <= 0) return alert('Số tiền không hợp lệ');
+  const deposits = read('deposits');
+  const dep = { id: gen('DEP'), userId: me.id, amount: amt, status: 'Chờ duyệt', createdAt: new Date().toISOString() };
+  deposits.push(dep);
+  write('deposits', deposits);
+  alert('Đã tạo yêu cầu nạp: ' + dep.id + '. Chờ admin duyệt.');
+  location.href = 'history.html';
+});
+</script>
+</body>
+</html>

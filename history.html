@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Lịch sử — Buff TikTok Giá Rẻ</title>
+<style>
+  body{font-family:Arial;background:#f7fafc;margin:0;padding:18px}
+  .wrap{max-width:900px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.06);margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{padding:8px;border:1px solid #eee;text-align:center}
+  h3{margin-bottom:8px}
+  .muted{color:#666;font-size:13px}
+  button{padding:8px 12px;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
+  a{color:#2563eb;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h2>Lịch sử hoạt động</h2>
+      <div class="muted" id="whoami"></div>
+    </div>
+    <div>
+      <a href="buff.html">← Về trang buff</a>
+    </div>
+  </header>
+
+  <div class="card">
+    <h3>💸 Lịch sử nạp tiền</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Mã nạp</th>
+          <th>Số tiền</th>
+          <th>Trạng thái</th>
+          <th>Thời gian</th>
+        </tr>
+      </thead>
+      <tbody id="depositTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>📦 Lịch sử đơn buff</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>ID đơn</th>
+          <th>Loại</th>
+          <th>Số lượng</th>
+          <th>Tổng</th>
+          <th>Trạng thái</th>
+          <th>Thời gian</th>
+        </tr>
+      </thead>
+      <tbody id="orderTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function read(k){ return JSON.parse(localStorage.getItem(k)||'[]'); }
+function formatDate(str){ return new Date(str).toLocaleString('vi-VN'); }
+
+/* Kiểm tra đăng nhập */
+const loggedId = localStorage.getItem('loggedUserId');
+if(!loggedId){ alert('Vui lòng đăng nhập'); location.href='index.html'; }
+
+/* Thông tin người dùng */
+const users = read('users');
+const me = users.find(u=> u.id === loggedId);
+if(!me){ alert('Tài khoản không tồn tại'); localStorage.removeItem('loggedUserId'); location.href='index.html'; }
+document.getElementById('whoami').textContent = `${me.username} (${me.id}) — Số dư: ${me.balance.toLocaleString()} đ`;
+
+/* Hiển thị lịch sử nạp */
+const deposits = read('deposits').filter(d => d.userId === me.id);
+const depositBody = document.getElementById('depositTable');
+if(deposits.length === 0) {
+  depositBody.innerHTML = `<tr><td colspan="4">Chưa có giao dịch nạp nào.</td></tr>`;
+} else {
+  deposits.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt))
+    .forEach(d=>{
+      depositBody.innerHTML += `<tr>
+        <td>${d.id}</td>
+        <td>${(d.amount||0).toLocaleString()}</td>
+        <td>${d.status}</td>
+        <td>${formatDate(d.createdAt)}</td>
+      </tr>`;
+    });
+}
+
+/* Hiển thị lịch sử buff */
+const orders = read('orders').filter(o => o.userId === me.id);
+const orderBody = document.getElementById('orderTable');
+if(orders.length === 0) {
+  orderBody.innerHTML = `<tr><td colspan="6">Chưa có đơn buff nào.</td></tr>`;
+} else {
+  orders.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt))
+    .forEach(o=>{
+      orderBody.innerHTML += `<tr>
+        <td>${o.orderId}</td>
+        <td>${o.type}</td>
+        <td>${o.amount}</td>
+        <td>${(o.total||0).toLocaleString()}</td>
+        <td>${o.status}</td>
+        <td>${formatDate(o.createdAt)}</td>
+      </tr>`;
+    });
+}
+</script>
+</body>
+</html>

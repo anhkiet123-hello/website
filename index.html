@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Buff TikTok Giá Rẻ — Đăng nhập</title>
+<style>
+  body{font-family:Arial;background:#f3f4f6;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}
+  .box{background:#fff;padding:22px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.08);width:360px}
+  h2{margin:0 0 12px;text-align:center}
+  input{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid #ddd}
+  .row{display:flex;gap:8px}
+  button{flex:1;padding:10px;border-radius:6px;border:0;cursor:pointer;color:#fff;font-weight:600}
+  .btn-login{background:#2563eb}
+  .btn-reg{background:#16a34a}
+  .muted{color:#666;font-size:13px;margin-top:8px;text-align:center}
+  a{color:#2563eb;text-decoration:none}
+</style>
+</head>
+<body>
+  <div class="box">
+    <h2>Buff TikTok Giá Rẻ</h2>
+
+    <label>Tên đăng nhập</label>
+    <input id="username" placeholder="username">
+
+    <label>Mật khẩu</label>
+    <input id="password" type="password" placeholder="password">
+
+    <div class="row">
+      <button class="btn-login" id="btnLogin">Đăng nhập</button>
+      <button class="btn-reg" id="btnRegister">Đăng ký</button>
+    </div>
+
+    <p class="muted">
+      Admin? <a href="admin/login.html">Vào khu Admin</a><br>
+      Sau khi đăng nhập sẽ chuyển tới trang Buff.
+    </p>
+  </div>
+
+<script>
+/* Storage helpers */
+function read(k){ return JSON.parse(localStorage.getItem(k) || '[]'); }
+function write(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+/* Init stores if empty */
+if(!localStorage.getItem('users')) write('users', []);
+if(!localStorage.getItem('orders')) write('orders', []);
+if(!localStorage.getItem('deposits')) write('deposits', []);
+
+/* Generate unique ID */
+function gen(prefix){ return prefix + Date.now().toString().slice(-6) + Math.floor(Math.random()*900+100); }
+
+/* If already logged -> go to buff */
+const logged = localStorage.getItem('loggedUserId');
+if(logged){
+  // validate exists
+  const u = read('users').find(x=> x.id === logged);
+  if(u) location.href = 'buff.html';
+  else localStorage.removeItem('loggedUserId');
+}
+
+/* Register */
+document.getElementById('btnRegister').addEventListener('click', ()=>{
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  if(!username || !password) return alert('Nhập đủ username và password');
+  const users = read('users');
+  if(users.find(u=> u.username === username)) return alert('Username đã tồn tại');
+  const id = gen('ACC');
+  users.push({ id, username, password, balance: 0 });
+  write('users', users);
+  // auto-login and go buff
+  localStorage.setItem('loggedUserId', id);
+  alert('Tạo tài khoản thành công. ID: ' + id + ' — Đã đăng nhập tự động.');
+  location.href = 'buff.html';
+});
+
+/* Login */
+document.getElementById('btnLogin').addEventListener('click', ()=>{
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  if(!username || !password) return alert('Nhập đủ thông tin');
+  const users = read('users');
+  const u = users.find(x=> x.username === username && x.password === password);
+  if(!u) return alert('Sai username hoặc password');
+  localStorage.setItem('loggedUserId', u.id);
+  alert('Đăng nhập thành công: ' + u.username);
+  location.href = 'buff.html';
+});
+</script>
+</body>
+</html>
